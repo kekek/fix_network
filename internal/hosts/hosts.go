@@ -26,7 +26,7 @@ func Fix(ip, domainName, hostPath string) error {
 	fmt.Println(strings.Repeat("=", 10), time.Now(), "开始修改hosts", ip, domainName)
 
 	// 备份文件
-	err := renameHosts(hostPath)
+	err := RenameHosts(hostPath)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func restartNetWork() {
 }
 
 // 备份文件
-func renameHosts(hostPath string) error {
+func RenameHosts(hostPath string) error {
 	newPath := fmt.Sprintf("%s.%s.bak", hostPath, time.Now().Format("20060102150405"))
 	fmt.Println(strings.Repeat("=", 5), time.Now(), "开始备份文件", hostPath, newPath)
 

@@ -13,13 +13,14 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/lextoumbourou/goodhosts"
+	"wps.ktkt.com/monitor/fix_network/pkg/goodhosts"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/parnurzeal/gorequest"
 	"github.com/sparrc/go-ping"
 	//"github.com/lextoumbourou/goodhosts"
 	wpsHost "wps.ktkt.com/monitor/fix_network/internal/hosts"
+	hostRename "wps.ktkt.com/monitor/fix_network/internal/hosts"
 )
 
 const (
@@ -83,6 +84,19 @@ func main() {
 	//	fmt.Println(line.Raw)
 	//}
 
+	err = hostRename.RenameHosts(HostFile)
+	if err != nil {
+		glog.Errorf("bak hostFile %s failed: %v", HostFile, err)
+		return
+	}
+	
+	err = hosts.RemoveAllHost(host)
+	if err != nil {
+		glog.Error("RemoveAllHost failed.", err)
+	}
+
+	hosts.Flush()
+
 	for i := range allIpList {
 		if ok := fixBind(hosts, allIpList[i], host); ok {
 			printResult("修复完成，请打开软件查看是否正常")
@@ -117,14 +131,8 @@ func fixBind(hosts goodhosts.Hosts, ip, domain string) bool {
 	// test 是否能通
 	ok := checkIsTimeOut(FixTarget)
 
-	if !ok { // 没有通过，恢复原样
-		if has {
-			err := hosts.Add(ip, domain)
-			if err != nil {
-				glog.Error("fixBind Remove recover failed: ", err)
-				return false
-			}
-		} else {
+	if !ok {
+		if !has { // 没有通过，恢复原样, 原来没有则删除
 			err := hosts.Remove(ip, domain)
 			if err != nil {
 				glog.Error("fixBind add recover failed: ", err)
@@ -190,6 +198,7 @@ func pingV2(domainName string) (res *ping.Pinger) {
 	return pinger
 }
 
+// 检查是否连通
 func checkIsTimeOut(targetUrl string) bool {
 	// 5 秒超时
 	request := gorequest.New().Timeout(5 * time.Second)
@@ -214,6 +223,7 @@ func printResult(msg string) {
 	fmt.Println("++++++++++END++++++++")
 }
 
+// 打印网络情况
 func IpLocation(ip, msg string) {
 	targetUrl := "https://www.ipip.net/ip.html"
 

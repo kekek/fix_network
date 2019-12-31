@@ -1,7 +1,7 @@
 package hosts
 
 import (
-	"github.com/lextoumbourou/goodhosts"
+	"wps.ktkt.com/monitor/fix_network/pkg/goodhosts"
 )
 
 func NewHosts(hostPath string) (goodhosts.Hosts, error) {

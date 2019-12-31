@@ -15,17 +15,7 @@
 #
 #      102.54.94.97     rhino.acme.com          # source server
 #       38.25.63.10     x.acme.com              # x client host
-
 # localhost name resolution is handled within DNS itself.
 #	127.0.0.1       localhost
 #	::1             localhost
-
 # 38.25.63.10     ktapi.zljgp.com              # x client host
-
-# 自动修复域名 ktapi.zljgp.com 
-# Last updated at 2019-12-30 16:50:58
-# Hosts Start 
-
-1111 ktapi.zljgp.com
-# Hosts End
-117.50.20.3 ktapi.zljgp.com
