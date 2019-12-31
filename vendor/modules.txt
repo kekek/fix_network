@@ -1,0 +1,29 @@
+# github.com/PuerkitoBio/goquery v1.5.0
+github.com/PuerkitoBio/goquery
+# github.com/andybalholm/cascadia v1.0.0
+github.com/andybalholm/cascadia
+# github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+github.com/golang/glog
+# github.com/lextoumbourou/goodhosts v2.1.0+incompatible
+github.com/lextoumbourou/goodhosts
+# github.com/parnurzeal/gorequest v0.2.16
+github.com/parnurzeal/gorequest
+# github.com/pkg/errors v0.8.1
+github.com/pkg/errors
+# github.com/sparrc/go-ping v0.0.0-20190613174326-4e5b6552494c
+github.com/sparrc/go-ping
+# golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
+golang.org/x/net/bpf
+golang.org/x/net/html
+golang.org/x/net/html/atom
+golang.org/x/net/icmp
+golang.org/x/net/internal/iana
+golang.org/x/net/internal/socket
+golang.org/x/net/ipv4
+golang.org/x/net/ipv6
+golang.org/x/net/publicsuffix
+# golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# moul.io/http2curl v1.0.0
+moul.io/http2curl
