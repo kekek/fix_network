@@ -10,7 +10,7 @@ run:
 .PHONY=build-win
 build-win:
 	@echo ">> build windows program:"
-	GOOS=windows go build --ldflags="-X main.Version=$(VER) -X main.Date=$d" -mod=vendor  -o bin/fix-network-win main.go
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build --ldflags="-X main.Version=$(VER) -X main.Date=$d" -mod=vendor  -o bin/fix-network.exe main.go
 
 .PHONY=build
 build:
