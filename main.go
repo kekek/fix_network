@@ -54,6 +54,11 @@ func main() {
 		return
 	}
 
+	if ok := checkIsTimeOut(FixTarget); ok {
+		printResult(fmt.Sprintf("网络 %s 畅通, 请联系客服处理", FixTarget))
+		os.Exit(1)
+	}
+
 	// 当前连接的服务器ip地址
 	host := originUrl.Hostname()
 	currIp := pingV2(host).IPAddr().String()
