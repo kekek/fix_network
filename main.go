@@ -20,7 +20,6 @@ import (
 	"github.com/sparrc/go-ping"
 	//"github.com/lextoumbourou/goodhosts"
 	wpsHost "wps.ktkt.com/monitor/fix_network/internal/hosts"
-	hostRename "wps.ktkt.com/monitor/fix_network/internal/hosts"
 )
 
 const (
@@ -84,12 +83,12 @@ func main() {
 	//	fmt.Println(line.Raw)
 	//}
 
-	err = hostRename.RenameHosts(HostFile)
+	err = wpsHost.RenameHosts(HostFile)
 	if err != nil {
 		glog.Errorf("bak hostFile %s failed: %v", HostFile, err)
 		return
 	}
-	
+
 	err = hosts.RemoveAllHost(host)
 	if err != nil {
 		glog.Error("RemoveAllHost failed.", err)
@@ -128,6 +127,8 @@ func fixBind(hosts goodhosts.Hosts, ip, domain string) bool {
 
 	hosts.Flush()
 
+	wpsHost.RestartNetWork()
+
 	// test 是否能通
 	ok := checkIsTimeOut(FixTarget)
 
@@ -138,6 +139,7 @@ func fixBind(hosts goodhosts.Hosts, ip, domain string) bool {
 				glog.Error("fixBind add recover failed: ", err)
 				return false
 			}
+			hosts.Flush()
 		}
 	}
 

@@ -87,7 +87,7 @@ func Fix(ip, domainName, hostPath string) error {
 		return err
 	}
 
-	restartNetWork()
+	RestartNetWork()
 	return nil
 }
 
@@ -114,13 +114,13 @@ func getHostsContent(hostPath string) ([]string, error) {
 	return res, nil
 }
 
-func restartNetWork() {
+func RestartNetWork() {
 	if runtime.GOOS == "windows" {
 		cmd := exec.Command("ipconfig", "/flushdns")
 		if err := cmd.Run(); err != nil {
 			log.Println(err.Error())
 		} else {
-			log.Println("新 DNS 解析生效")
+			log.Println("exec : ipconfig /flushdns 新 DNS 解析")
 		}
 
 	} else {
