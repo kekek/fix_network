@@ -1,23 +1,17 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
-	"net"
-	"net/http"
-	"net/url"
-	"os"
-	"os/signal"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/golang/glog"
+	"wps.ktkt.com/monitor/fix_network/internal/url2"
 	"wps.ktkt.com/monitor/fix_network/pkg/goodhosts"
+	"wps.ktkt.com/monitor/fix_network/pkg/util"
 
-	"github.com/PuerkitoBio/goquery"
-	"github.com/parnurzeal/gorequest"
-	"github.com/sparrc/go-ping"
 	//"github.com/lextoumbourou/goodhosts"
 	wpsHost "wps.ktkt.com/monitor/fix_network/internal/hosts"
 )
@@ -30,102 +24,119 @@ const (
 
 var HostFile = testFile
 
-var FixTarget string
+var domainList = []string{
+	"https://clt.zljgp.com",
+	"https://www.zljgp.com/logicians",
+	"https://ktapi.zljgp.com",
+	"https://mapi.zljgp.com",
+	"https://message.zljgp.com",
+	"https://mystock.zljgp.com",
+	//"zlj.docs.zljgp.com",
+	//"metric.zljgp.com",
+	//"ws.zljgp.com",
+}
 
 func init() {
 	if runtime.GOOS == "windows" {
 		HostFile = winHostFile
 	}
-
-	flag.StringVar(&FixTarget, "url", "https://ktapi.zljgp.com/v1/user/permission", "需要修复的地址,例如 : https://ktapi.zljgp.com/v1/user/permission")
-
 }
+
 func main() {
+
 	flag.Parse()
 
-	if len(FixTarget) == 0 {
-		glog.Info("url 参数不能为空")
-		os.Exit(1)
+	// 用户当前网络
+	util.IpLocation("", "当前用户网络状态")
+
+	for _, v := range domainList {
+
+
+		printStart(fmt.Sprintf("检查：%s ", v))
+
+		if ok := util.CheckConnect(v); ok {
+			fmt.Printf("[%s] 网络连通正常 \n", v)
+		} else {
+			info := url2.New(v)
+			err := check(info)
+			if err != nil {
+				printResult(fmt.Sprintf("修复 %s 失败: %v", v, err))
+			} else {
+				printResult(fmt.Sprintf("修复 %s 成功.", v))
+			}
+		}
+
+		printEnd("")
+		fmt.Println()
 	}
 
-	originUrl, err := url.Parse(FixTarget)
+	fmt.Println("所有检查完成")
+}
+
+func check(info *url2.SelfUrl) error {
+
+	currIp := info.CurrIP()
+	fmt.Printf("hostName : %s,  currIp : %s \n", info.Host, currIp)
+
+	util.IpLocation(currIp, fmt.Sprintf("服务器主机[%s(%s)]网络：", info.Host, currIp))
+
+	// 备份host
+	err := wpsHost.RenameHosts(HostFile)
 	if err != nil {
-		glog.Error("parse url failed.", err)
-		return
+		return fmt.Errorf("bak hostFile %s failed: %v", HostFile, err)
 	}
-
-	if ok := checkIsTimeOut(FixTarget); ok {
-		printResult(fmt.Sprintf("网络 %s 畅通, 请联系客服处理", FixTarget))
-		os.Exit(1)
-	}
-
-	// 当前连接的服务器ip地址
-	host := originUrl.Hostname()
-	currIp := pingV2(host).IPAddr().String()
-	// userPublicIp 用户公网ip
-	glog.Infof("host %s, currIp %s \n", host, currIp)
-
-	IpLocation(currIp, "当前服务器网络信息")
-	IpLocation("", "当前用户网络信息")
-
-	//os.Exit(0)
-
-	// dns 解析的服务器ip地址
-	allIpList := lookUpDomain(host)
-	if len(allIpList) == 0 {
-		printResult(fmt.Sprintf("DNS 解析未解析 %s，请修复DNS", host))
-		os.Exit(0)
-	}
-
-	glog.Infof("host %s, allIp %v \n", host, allIpList)
 
 	// host file ip 信息
 	hosts, err := wpsHost.NewHosts(HostFile)
 	if err != nil {
-		glog.Error("get host failed.")
+		return fmt.Errorf("get host failed: %v", err)
 	}
-	//for _, line := range hosts.Lines {
-	//	fmt.Println(line.Raw)
-	//}
 
-	err = wpsHost.RenameHosts(HostFile)
+	err = hosts.RemoveAllHost(info.Host)
 	if err != nil {
-		glog.Errorf("bak hostFile %s failed: %v", HostFile, err)
-		return
+		return fmt.Errorf("RemoveAllHost failed: %v", err)
 	}
-
-	err = hosts.RemoveAllHost(host)
-	if err != nil {
-		glog.Error("RemoveAllHost failed.", err)
-	}
-
 	hosts.Flush()
 
+	// 移除host 绑定后， 再次测试是否
+	if ok := util.CheckConnect(info.LawUrl); ok {
+		fmt.Println("移除绑定后，连接成功")
+		return nil
+	}
+
+	//info.AllIpV2()
+	allIpList := info.AllIp()
+	if len(allIpList) == 0 {
+		return fmt.Errorf("DNS 解析未解析 %s，请尝试修复DNS", info.Host)
+	}
+
+	fmt.Printf("host：%s, allIp：%v \n", info.Host, allIpList)
+
 	for i := range allIpList {
-		if ok := fixBind(hosts, allIpList[i], host); ok {
-			printResult("修复完成，请打开软件查看是否正常")
-			break
+		if ok := fixBind(hosts, allIpList[i], info); ok {
+			return errors.New("无法修复联系管理员")
 		}
 	}
+	return nil
 }
 
 // ip , domain
 // 操作绑定 host ， 测试是否通过， 通过则OK；不通过则删除。
-func fixBind(hosts goodhosts.Hosts, ip, domain string) bool {
-	glog.Infof("fixBind %s %s \n", ip, domain)
-	has := hosts.Has(ip, domain)
+func fixBind(hosts goodhosts.Hosts, ip string, info *url2.SelfUrl) bool {
+	glog.Infof("fixBind %s %s \n", ip, info.Host)
+	has := hosts.Has(ip, info.Host)
 
 	// 有则删除，没有则添加
 	if has {
-		err := hosts.Remove(ip, domain)
+		err := hosts.Remove(ip, info.Host)
 		if err != nil {
-			glog.Error("fixBind Remove failed: ", err)
+			fmt.Println("fixBind Remove failed: ", err)
 			return false
 		}
 	} else {
-		err := hosts.Add(ip, domain)
+		err := hosts.Add(ip, info.Host)
 		if err != nil {
-			glog.Error("fixBind add failed: ", err)
+			fmt.Println("fixBind add failed: ", err)
 			return false
 		}
 	}
@@ -135,13 +146,13 @@ func fixBind(hosts goodhosts.Hosts, ip, domain string) bool {
 	wpsHost.RestartNetWork()
 
 	// test 是否能通
-	ok := checkIsTimeOut(FixTarget)
+	ok := util.CheckConnect(info.LawUrl)
 
 	if !ok {
 		if !has { // 没有通过，恢复原样, 原来没有则删除
-			err := hosts.Remove(ip, domain)
+			err := hosts.Remove(ip, info.Host)
 			if err != nil {
-				glog.Error("fixBind add recover failed: ", err)
+				fmt.Println("fixBind add recover failed: ", err)
 				return false
 			}
 			hosts.Flush()
@@ -151,114 +162,14 @@ func fixBind(hosts goodhosts.Hosts, ip, domain string) bool {
 	return ok
 }
 
-func lookUpDomain(domainName string) []string {
-	res := []string{}
-	// 诊断 dns
-	fmt.Printf("%s 开始查找dns %s \n", strings.Repeat("=", 20), domainName)
-	ips, err := net.LookupIP(domainName)
-	if err != nil {
-		glog.Error("lookUpDomain: 获取ip错误", err)
-		return res
-	}
-
-	for _, ip := range ips {
-		res = append(res, ip.String())
-	}
-
-	return res
-}
-
-func pingV2(domainName string) (res *ping.Pinger) {
-	glog.Infof("%s pingV2 : ping %s \n", strings.Repeat("=", 20),  domainName)
-	pinger, err := ping.NewPinger(domainName)
-	if err != nil {
-		glog.Error(err)
-		return
-	}
-
-	pinger.Count = 3
-
-	// listen for ctrl-C signal
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for _ = range c {
-			pinger.Stop()
-		}
-	}()
-
-	pinger.OnRecv = func(pkt *ping.Packet) {
-		fmt.Printf("%d bytes from %s: icmp_seq=%d time=%v\n",
-			pkt.Nbytes, pkt.IPAddr, pkt.Seq, pkt.Rtt)
-	}
-	pinger.OnFinish = func(stats *ping.Statistics) {
-		fmt.Printf("\n--- %s ping statistics ---\n", stats.Addr)
-		fmt.Printf("%d packets transmitted, %d packets received, %v%% packet loss\n",
-			stats.PacketsSent, stats.PacketsRecv, stats.PacketLoss)
-		fmt.Printf("round-trip min/avg/max/stddev = %v/%v/%v/%v\n",
-			stats.MinRtt, stats.AvgRtt, stats.MaxRtt, stats.StdDevRtt)
-	}
-
-	fmt.Printf("PING %s (%s):\n", pinger.Addr(), pinger.IPAddr())
-	pinger.Run()
-
-	return pinger
-}
-
-// 检查是否连通
-func checkIsTimeOut(targetUrl string) bool {
-	// 5 秒超时
-	request := gorequest.New().Timeout(5 * time.Second)
-	resp, body, err := request.Get(targetUrl).End()
-	if err != nil {
-		glog.Errorf("请求 %s 超时 \n", targetUrl)
-		return false
-	}
-
-	glog.Info("checkIsTimeOut body: ", body)
-	glog.Info("checkIsTimeOut resp", resp)
-
-	if resp.StatusCode == http.StatusOK || resp.StatusCode == 911 {
-		return true
-	}
-	return false
-}
-
 func printResult(msg string) {
-	fmt.Println("++++++++++诊断结果++++++++")
 	fmt.Println(msg)
-	fmt.Println("++++++++++END++++++++")
 }
 
-// 打印网络情况
-func IpLocation(ip, msg string) {
-	targetUrl := "https://www.ipip.net/ip.html"
+func printStart(title string) {
+	fmt.Printf("%s BEGIN: %s %s \n", strings.Repeat("+", 20), title, strings.Repeat("+", 20))
+}
 
-	if len(ip) > 0 {
-		targetUrl = fmt.Sprintf("https://www.ipip.net/ip/%s.html", ip)
-	}
-
-	request := gorequest.New().Timeout(5 * time.Second)
-	resp, _, errs := request.Get(targetUrl).End()
-	//resp, body, errs := request.Get(targetUrl).End()
-	if errs != nil {
-		glog.Errorf("请求 %s 超时 \n", targetUrl)
-	}
-	//glog.Info("checkIsTimeOut body: ", body)
-	//glog.Info("checkIsTimeOut resp", resp)
-
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		glog.Error("NewDocumentFromReader failed.", err)
-		return
-	}
-	fmt.Printf("%s %s \n", strings.Repeat("=", 20), msg)
-	doc.Find(".ipSearch").Find("table").First().Find("tr").Each(func(i int, e *goquery.Selection) {
-		if i == 1 || i == 2 || i == 3 {
-			tdList := e.ChildrenFiltered("td")
-			title := strings.Trim(tdList.First().Text(), " \n\r\t")
-			value := strings.Trim(tdList.Eq(1).Find("span").First().Text(), " \n\r\t")
-			fmt.Printf("%s: %s\n", title, value)
-		}
-	})
+func printEnd(title string) {
+	fmt.Printf("%s END %s %s \n", strings.Repeat("+", 20), title, strings.Repeat("+", 20))
 }
