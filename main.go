@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 
@@ -15,6 +16,11 @@ import (
 	//"github.com/lextoumbourou/goodhosts"
 	wpsHost "wps.ktkt.com/monitor/fix_network/internal/hosts"
 )
+
+var Version string
+var Date string
+
+var showVer = flag.Bool("version", false, "show version")
 
 const (
 	winHostFile = "C:\\Windows\\System32\\drivers\\etc\\hosts"
@@ -46,11 +52,15 @@ func main() {
 
 	flag.Parse()
 
+	if *showVer {
+		fmt.Println("version : ", Version, "build date : ", Date)
+		os.Exit(0)
+	}
+
 	// 用户当前网络
 	util.IpLocation("", "当前用户网络状态")
 
 	for _, v := range domainList {
-
 
 		printStart(fmt.Sprintf("检查：%s ", v))
 
