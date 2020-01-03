@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 
+	"wps.ktkt.com/monitor/fix_network/internal/logging"
 	"github.com/sparrc/go-ping"
 )
 
@@ -107,10 +108,10 @@ func (u *SelfUrl) CurrIP() string {
 }
 
 func newPingV2(domainName string) (res *ping.Pinger) {
-	fmt.Printf("%s pingV2 : ping %s \n", strings.Repeat("=", 20), domainName)
+	logging.Printf("%s pingV2 : ping %s \n", strings.Repeat("=", 20), domainName)
 	pinger, err := ping.NewPinger(domainName)
 	if err != nil {
-		fmt.Printf("pingV2 ping.NewPinger(%s) failed: %v", domainName, err)
+		logging.Printf("pingV2 ping.NewPinger(%s) failed: %v", domainName, err)
 		return
 	}
 
@@ -129,17 +130,17 @@ func newPingV2(domainName string) (res *ping.Pinger) {
 	}()
 
 	pinger.OnRecv = func(pkt *ping.Packet) {
-		fmt.Printf("%d bytes from %s: icmp_seq=%d time=%v\n",
+		logging.Printf("%d bytes from %s: icmp_seq=%d time=%v\n",
 			pkt.Nbytes, pkt.IPAddr, pkt.Seq, pkt.Rtt)
 	}
 	pinger.OnFinish = func(stats *ping.Statistics) {
-		fmt.Printf("\n--- %s ping statistics ---\n", stats.Addr)
-		fmt.Printf("%d packets transmitted, %d packets received, %v%% packet loss\n",
+		logging.Printf("\n--- %s ping statistics ---\n", stats.Addr)
+		logging.Printf("%d packets transmitted, %d packets received, %v%% packet loss\n",
 			stats.PacketsSent, stats.PacketsRecv, stats.PacketLoss)
-		fmt.Printf("round-trip min/avg/max/stddev = %v/%v/%v/%v\n",
+		logging.Printf("round-trip min/avg/max/stddev = %v/%v/%v/%v\n",
 			stats.MinRtt, stats.AvgRtt, stats.MaxRtt, stats.StdDevRtt)
 	}
 
-	fmt.Printf("PING %s (%s):\n", pinger.Addr(), pinger.IPAddr())
+	logging.Printf("PING %s (%s):\n", pinger.Addr(), pinger.IPAddr())
 	return pinger
 }
