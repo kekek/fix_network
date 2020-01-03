@@ -5,8 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 
 	"github.com/golang/glog"
 	"wps.ktkt.com/monitor/fix_network/internal/url2"
@@ -90,6 +92,8 @@ func main() {
 	}
 
 	logging.Println("所有检查完成")
+
+	InitSignal()
 }
 
 func check(info *url2.SelfUrl) error {
@@ -186,4 +190,22 @@ func printStart(title string) {
 
 func printEnd(title string) {
 	logging.Printf("%s END %s %s \n", strings.Repeat("+", 20), title, strings.Repeat("+", 20))
+}
+
+
+// InitSignal register signals handler.
+func InitSignal() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT, syscall.SIGSTOP)
+	for {
+		s := <-c
+		switch s {
+		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGSTOP, syscall.SIGINT:
+			return
+		case syscall.SIGHUP:
+
+		default:
+			return
+		}
+	}
 }
