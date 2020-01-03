@@ -35,7 +35,7 @@ var domainList = []string{
 	"https://clt.zljgp.com",
 	"https://www.zljgp.com/logicians",
 	"https://ktapi.zljgp.com",
-	"https://mapi.zljgp.com",
+	"https://mapi.zljgp.com/user/v1/mobile-signin-refresh-token",
 	"https://message.zljgp.com",
 	"https://mystock.zljgp.com",
 	//"zlj.docs.zljgp.com",
@@ -66,11 +66,17 @@ func main() {
 	for _, v := range domainList {
 
 		printStart(fmt.Sprintf("检查：%s ", v))
+		info := url2.New(v)
 
+		currIp := info.CurrIP()
+		logging.Printf("hostName : %s,  currIp : %s \n", info.Host, currIp)
+
+		util.IpLocation(currIp, fmt.Sprintf("服务器主机[%s(%s)]网络：", info.Host, currIp))
+		
 		if ok := util.CheckConnect(v); ok {
+
 			logging.Printf("[%s] 网络连通正常 \n", v)
 		} else {
-			info := url2.New(v)
 			err := check(info)
 			if err != nil {
 				printResult(fmt.Sprintf("修复 %s 失败: %v", v, err))
@@ -87,12 +93,6 @@ func main() {
 }
 
 func check(info *url2.SelfUrl) error {
-
-	currIp := info.CurrIP()
-	logging.Printf("hostName : %s,  currIp : %s \n", info.Host, currIp)
-
-	util.IpLocation(currIp, fmt.Sprintf("服务器主机[%s(%s)]网络：", info.Host, currIp))
-
 	// 备份host
 	//err := wpsHost.RenameHosts(HostFile)
 	err := wpsHost.BackupHosts(HostFile)
