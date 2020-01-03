@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"runtime"
 	"strings"
 
 	"github.com/sparrc/go-ping"
@@ -114,6 +115,9 @@ func newPingV2(domainName string) (res *ping.Pinger) {
 	}
 
 	pinger.Count = 3
+	if runtime.GOOS == "windows" {
+		pinger.SetPrivileged(true)
+	}
 
 	// listen for ctrl-C signal
 	c := make(chan os.Signal, 1)
