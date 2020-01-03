@@ -10,13 +10,13 @@ import (
 	"strings"
 	"syscall"
 
-	"wps.ktkt.com/monitor/fix_network/internal/url2"
-	"wps.ktkt.com/monitor/fix_network/pkg/goodhosts"
-	"wps.ktkt.com/monitor/fix_network/pkg/util"
-	"wps.ktkt.com/monitor/fix_network/internal/logging"
+	"github.com/kekek/fix_network/internal/url2"
+	"github.com/kekek/fix_network/pkg/goodhosts"
+	"github.com/kekek/fix_network/pkg/util"
+	"github.com/kekek/fix_network/internal/logging"
 
 	//"github.com/lextoumbourou/goodhosts"
-	wpsHost "wps.ktkt.com/monitor/fix_network/internal/hosts"
+	wpsHost "github.com/kekek/fix_network/internal/hosts"
 )
 
 var Version string

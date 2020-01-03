@@ -12,7 +12,7 @@ import (
 	"runtime"
 	"strings"
 
-	"wps.ktkt.com/monitor/fix_network/internal/logging"
+	"github.com/kekek/fix_network/internal/logging"
 	"github.com/sparrc/go-ping"
 )
 

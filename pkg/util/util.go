@@ -10,7 +10,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/parnurzeal/gorequest"
-	"wps.ktkt.com/monitor/fix_network/internal/logging"
+	"github.com/kekek/fix_network/internal/logging"
 )
 
 func CheckConnect(url string) bool {

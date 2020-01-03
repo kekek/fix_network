@@ -1,4 +1,4 @@
-module wps.ktkt.com/monitor/fix_network
+module github.com/kekek/fix_network
 
 go 1.13
 
