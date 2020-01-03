@@ -14,6 +14,8 @@ import (
 )
 
 func CheckConnect(url string) bool {
+	logging.Printf("%s 网络连接状态CheckConnect[%s] \n", strings.Repeat("=", 20), url)
+
 	// 5 秒超时
 	request := gorequest.New().Timeout(5 * time.Second)
 	resp, _, errs := request.Get(url).End()
