@@ -12,6 +12,7 @@ import (
 	"wps.ktkt.com/monitor/fix_network/internal/url2"
 	"wps.ktkt.com/monitor/fix_network/pkg/goodhosts"
 	"wps.ktkt.com/monitor/fix_network/pkg/util"
+	"wps.ktkt.com/monitor/fix_network/internal/logging"
 
 	//"github.com/lextoumbourou/goodhosts"
 	wpsHost "wps.ktkt.com/monitor/fix_network/internal/hosts"
@@ -53,9 +54,11 @@ func main() {
 	flag.Parse()
 
 	if *showVer {
-		fmt.Println("version : ", Version, "build date : ", Date)
+		logging.Println("version : ", Version, "build date : ", Date)
 		os.Exit(0)
 	}
+
+	logging.Init("./info.log")
 
 	// 用户当前网络
 	util.IpLocation("", "当前用户网络状态")
@@ -65,7 +68,7 @@ func main() {
 		printStart(fmt.Sprintf("检查：%s ", v))
 
 		if ok := util.CheckConnect(v); ok {
-			fmt.Printf("[%s] 网络连通正常 \n", v)
+			logging.Printf("[%s] 网络连通正常 \n", v)
 		} else {
 			info := url2.New(v)
 			err := check(info)
@@ -77,21 +80,22 @@ func main() {
 		}
 
 		printEnd("")
-		fmt.Println()
+		logging.Println()
 	}
 
-	fmt.Println("所有检查完成")
+	logging.Println("所有检查完成")
 }
 
 func check(info *url2.SelfUrl) error {
 
 	currIp := info.CurrIP()
-	fmt.Printf("hostName : %s,  currIp : %s \n", info.Host, currIp)
+	logging.Printf("hostName : %s,  currIp : %s \n", info.Host, currIp)
 
 	util.IpLocation(currIp, fmt.Sprintf("服务器主机[%s(%s)]网络：", info.Host, currIp))
 
 	// 备份host
-	err := wpsHost.RenameHosts(HostFile)
+	//err := wpsHost.RenameHosts(HostFile)
+	err := wpsHost.BackupHosts(HostFile)
 	if err != nil {
 		return fmt.Errorf("bak hostFile %s failed: %v", HostFile, err)
 	}
@@ -110,7 +114,7 @@ func check(info *url2.SelfUrl) error {
 
 	// 移除host 绑定后， 再次测试是否
 	if ok := util.CheckConnect(info.LawUrl); ok {
-		fmt.Println("移除绑定后，连接成功")
+		logging.Println("移除绑定后，连接成功")
 		return nil
 	}
 
@@ -120,7 +124,7 @@ func check(info *url2.SelfUrl) error {
 		return fmt.Errorf("DNS 解析未解析 %s，请尝试修复DNS", info.Host)
 	}
 
-	fmt.Printf("host：%s, allIp：%v \n", info.Host, allIpList)
+	logging.Printf("host：%s, allIp：%v \n", info.Host, allIpList)
 
 	for i := range allIpList {
 		if ok := fixBind(hosts, allIpList[i], info); ok {
@@ -140,13 +144,13 @@ func fixBind(hosts goodhosts.Hosts, ip string, info *url2.SelfUrl) bool {
 	if has {
 		err := hosts.Remove(ip, info.Host)
 		if err != nil {
-			fmt.Println("fixBind Remove failed: ", err)
+			logging.Println("fixBind Remove failed: ", err)
 			return false
 		}
 	} else {
 		err := hosts.Add(ip, info.Host)
 		if err != nil {
-			fmt.Println("fixBind add failed: ", err)
+			logging.Println("fixBind add failed: ", err)
 			return false
 		}
 	}
@@ -162,7 +166,7 @@ func fixBind(hosts goodhosts.Hosts, ip string, info *url2.SelfUrl) bool {
 		if !has { // 没有通过，恢复原样, 原来没有则删除
 			err := hosts.Remove(ip, info.Host)
 			if err != nil {
-				fmt.Println("fixBind add recover failed: ", err)
+				logging.Println("fixBind add recover failed: ", err)
 				return false
 			}
 			hosts.Flush()
@@ -173,13 +177,13 @@ func fixBind(hosts goodhosts.Hosts, ip string, info *url2.SelfUrl) bool {
 }
 
 func printResult(msg string) {
-	fmt.Println(msg)
+	logging.Println(msg)
 }
 
 func printStart(title string) {
-	fmt.Printf("%s BEGIN: %s %s \n", strings.Repeat("+", 20), title, strings.Repeat("+", 20))
+	logging.Printf("%s BEGIN: %s %s \n", strings.Repeat("+", 20), title, strings.Repeat("+", 20))
 }
 
 func printEnd(title string) {
-	fmt.Printf("%s END %s %s \n", strings.Repeat("+", 20), title, strings.Repeat("+", 20))
+	logging.Printf("%s END %s %s \n", strings.Repeat("+", 20), title, strings.Repeat("+", 20))
 }
