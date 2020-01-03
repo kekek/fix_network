@@ -39,6 +39,7 @@ var domainList = []string{
 	"https://mapi.zljgp.com/user/v1/mobile-signin-refresh-token",
 	"https://message.zljgp.com",
 	"https://mystock.zljgp.com",
+	"https://test.daklfjdlasjfldasjflas.com",
 	//"zlj.docs.zljgp.com",
 	//"metric.zljgp.com",
 	//"ws.zljgp.com",
@@ -67,7 +68,12 @@ func main() {
 	for _, v := range domainList {
 
 		printStart(fmt.Sprintf("检查：%s ", v))
-		info := url2.New(v)
+		info, err := url2.New(v)
+		if err != nil {
+			logging.Printf("主机不存在，请修复dns或检查域名[%s]是否正确", v)
+			printEnd("")
+			continue
+		}
 
 		currIp := info.CurrIP()
 		logging.Printf("hostName : %s,  currIp : %s \n", info.Host, currIp)
@@ -201,8 +207,6 @@ func InitSignal() {
 		switch s {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
 			return
-		case syscall.SIGHUP:
-
 		default:
 			return
 		}

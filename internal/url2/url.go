@@ -1,6 +1,7 @@
 package url2
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -22,7 +23,7 @@ type SelfUrl struct {
 	ipList []string
 }
 
-func New(addr string) (info *SelfUrl) {
+func New(addr string) (info *SelfUrl, err error) {
 	info = &SelfUrl{
 		LawUrl:   addr,
 		Host:     "",
@@ -31,7 +32,7 @@ func New(addr string) (info *SelfUrl) {
 
 	addrInfo, err := url.Parse(addr)
 	if err != nil {
-		fmt.Printf("parse url failed : %v \n", err)
+		logging.Printf("parse url failed : %v \n", err)
 		return
 	} else if addrInfo == nil {
 		return
@@ -39,7 +40,12 @@ func New(addr string) (info *SelfUrl) {
 
 	info.Host = addrInfo.Hostname()
 	
-	info.PingFunc = newPingV2(info.Host)
+	 pingFunc := newPingV2(info.Host)
+	if pingFunc == nil {
+		return info, errors.New("dns 错误")
+	}
+
+	info.PingFunc = pingFunc
 
 	return
 }
@@ -112,7 +118,7 @@ func newPingV2(domainName string) (res *ping.Pinger) {
 	pinger, err := ping.NewPinger(domainName)
 	if err != nil {
 		logging.Printf("pingV2 ping.NewPinger(%s) failed: %v", domainName, err)
-		return
+		return nil
 	}
 
 	pinger.Count = 3
