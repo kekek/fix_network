@@ -39,7 +39,7 @@ var domainList = []string{
 	"https://mapi.zljgp.com/user/v1/mobile-signin-refresh-token",
 	"https://message.zljgp.com",
 	"https://mystock.zljgp.com",
-	"https://test.daklfjdlasjfldasjflas.com",
+	//"https://test.daklfjdlasjfldasjflas.com",
 	//"zlj.docs.zljgp.com",
 	//"metric.zljgp.com",
 	//"ws.zljgp.com",
