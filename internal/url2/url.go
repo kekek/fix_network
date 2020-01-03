@@ -134,7 +134,7 @@ func newPingV2(domainName string) (res *ping.Pinger) {
 			pkt.Nbytes, pkt.IPAddr, pkt.Seq, pkt.Rtt)
 	}
 	pinger.OnFinish = func(stats *ping.Statistics) {
-		logging.Printf("\n--- %s ping statistics ---\n", stats.Addr)
+		logging.Printf("--- %s ping statistics ---\n", stats.Addr)
 		logging.Printf("%d packets transmitted, %d packets received, %v%% packet loss\n",
 			stats.PacketsSent, stats.PacketsRecv, stats.PacketLoss)
 		logging.Printf("round-trip min/avg/max/stddev = %v/%v/%v/%v\n",

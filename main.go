@@ -10,7 +10,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/golang/glog"
 	"wps.ktkt.com/monitor/fix_network/internal/url2"
 	"wps.ktkt.com/monitor/fix_network/pkg/goodhosts"
 	"wps.ktkt.com/monitor/fix_network/pkg/util"
@@ -141,7 +140,7 @@ func check(info *url2.SelfUrl) error {
 // ip , domain
 // 操作绑定 host ， 测试是否通过， 通过则OK；不通过则删除。
 func fixBind(hosts goodhosts.Hosts, ip string, info *url2.SelfUrl) bool {
-	glog.Infof("fixBind %s %s \n", ip, info.Host)
+	logging.Printf("fixBind %s %s \n", ip, info.Host)
 	has := hosts.Has(ip, info.Host)
 
 	// 有则删除，没有则添加
@@ -185,11 +184,11 @@ func printResult(msg string) {
 }
 
 func printStart(title string) {
-	logging.Printf("%s BEGIN: %s %s \n", strings.Repeat("+", 20), title, strings.Repeat("+", 20))
+	logging.Printf("\n %s BEGIN: %s %s \n", strings.Repeat("+", 20), title, strings.Repeat("+", 20))
 }
 
 func printEnd(title string) {
-	logging.Printf("%s END %s %s \n", strings.Repeat("+", 20), title, strings.Repeat("+", 20))
+	logging.Printf("\n %s END %s %s \n", strings.Repeat("+", 20), title, strings.Repeat("+", 20))
 }
 
 
