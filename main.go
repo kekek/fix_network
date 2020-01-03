@@ -72,7 +72,7 @@ func main() {
 		logging.Printf("hostName : %s,  currIp : %s \n", info.Host, currIp)
 
 		util.IpLocation(currIp, fmt.Sprintf("服务器主机[%s(%s)]网络：", info.Host, currIp))
-		
+
 		if ok := util.CheckConnect(v); ok {
 
 			logging.Printf("[%s] 网络连通正常 \n", v)
