@@ -1,7 +1,6 @@
 package url2
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -12,22 +11,20 @@ import (
 	"runtime"
 	"strings"
 
-	"wps.ktkt.com/monitor/fix_network/internal/logging"
 	"github.com/sparrc/go-ping"
+	"wps.ktkt.com/monitor/fix_network/internal/logging"
 )
 
 type SelfUrl struct {
 	LawUrl string
-	Host string
-	PingFunc *ping.Pinger
+	Host   string
 	ipList []string
 }
 
 func New(addr string) (info *SelfUrl, err error) {
 	info = &SelfUrl{
-		LawUrl:   addr,
-		Host:     "",
-		PingFunc: nil,
+		LawUrl: addr,
+		Host:   "",
 	}
 
 	addrInfo, err := url.Parse(addr)
@@ -39,21 +36,13 @@ func New(addr string) (info *SelfUrl, err error) {
 	}
 
 	info.Host = addrInfo.Hostname()
-	
-	 pingFunc := newPingV2(info.Host)
-	if pingFunc == nil {
-		return info, errors.New("dns 错误")
-	}
-
-	info.PingFunc = pingFunc
-
 	return
 }
 
 // check dns
 func (u *SelfUrl) AllIp() []string {
 
-	if len(u.ipList) >  0 {
+	if len(u.ipList) > 0 {
 		return u.ipList
 	}
 
@@ -75,7 +64,7 @@ func (u *SelfUrl) AllIp() []string {
 
 func (u *SelfUrl) AllIpV2() []string {
 
-	if len(u.ipList) >  0 {
+	if len(u.ipList) > 0 {
 		return u.ipList
 	}
 
@@ -94,7 +83,6 @@ func (u *SelfUrl) AllIpV2() []string {
 }
 
 func (u *SelfUrl) AllIpTest() {
-
 	// 解析ip地址
 	ns, err := net.LookupHost(u.Host)
 	if err != nil {
@@ -107,13 +95,33 @@ func (u *SelfUrl) AllIpTest() {
 	}
 }
 
-
 func (u *SelfUrl) CurrIP() string {
-	u.PingFunc.Run()
-	return u.PingFunc.IPAddr().String()
+	pingFunc := newPingV2(u.Host, true)
+	if pingFunc == nil {
+		return ""
+	}
+
+	pingFunc.Run()
+	return pingFunc.IPAddr().String()
 }
 
-func newPingV2(domainName string) (res *ping.Pinger) {
+func (u *SelfUrl) Ping() string {
+	pingFunc := newPingV2(u.Host, true)
+	if pingFunc == nil {
+		return ""
+	}
+
+	pingFunc.Run()
+	return pingFunc.IPAddr().String()
+}
+
+func newPingV2(domainName string, debug ...bool) (res *ping.Pinger) {
+
+	isLog := false
+	if len(debug) > 0 {
+		isLog = debug[0]
+	}
+
 	logging.Printf("%s pingV2 : ping %s \n", strings.Repeat("=", 20), domainName)
 	pinger, err := ping.NewPinger(domainName)
 	if err != nil {
@@ -136,15 +144,19 @@ func newPingV2(domainName string) (res *ping.Pinger) {
 	}()
 
 	pinger.OnRecv = func(pkt *ping.Packet) {
-		logging.Printf("%d bytes from %s: icmp_seq=%d time=%v\n",
-			pkt.Nbytes, pkt.IPAddr, pkt.Seq, pkt.Rtt)
+		if isLog {
+			logging.Printf("%d bytes from %s: icmp_seq=%d time=%v\n",
+				pkt.Nbytes, pkt.IPAddr, pkt.Seq, pkt.Rtt)
+		}
 	}
 	pinger.OnFinish = func(stats *ping.Statistics) {
-		logging.Printf("--- %s ping statistics ---\n", stats.Addr)
-		logging.Printf("%d packets transmitted, %d packets received, %v%% packet loss\n",
-			stats.PacketsSent, stats.PacketsRecv, stats.PacketLoss)
-		logging.Printf("round-trip min/avg/max/stddev = %v/%v/%v/%v\n",
-			stats.MinRtt, stats.AvgRtt, stats.MaxRtt, stats.StdDevRtt)
+		if isLog {
+			logging.Printf("--- %s ping statistics ---\n", stats.Addr)
+			logging.Printf("%d packets transmitted, %d packets received, %v%% packet loss\n",
+				stats.PacketsSent, stats.PacketsRecv, stats.PacketLoss)
+			logging.Printf("round-trip min/avg/max/stddev = %v/%v/%v/%v\n",
+				stats.MinRtt, stats.AvgRtt, stats.MaxRtt, stats.StdDevRtt)
+		}
 	}
 
 	logging.Printf("PING %s (%s):\n", pinger.Addr(), pinger.IPAddr())

@@ -10,10 +10,10 @@ import (
 	"strings"
 	"syscall"
 
+	"wps.ktkt.com/monitor/fix_network/internal/logging"
 	"wps.ktkt.com/monitor/fix_network/internal/url2"
 	"wps.ktkt.com/monitor/fix_network/pkg/goodhosts"
 	"wps.ktkt.com/monitor/fix_network/pkg/util"
-	"wps.ktkt.com/monitor/fix_network/internal/logging"
 
 	//"github.com/lextoumbourou/goodhosts"
 	wpsHost "wps.ktkt.com/monitor/fix_network/internal/hosts"
@@ -97,6 +97,7 @@ func main() {
 	}
 
 	logging.Println("所有检查完成")
+	logging.Println("所有检查正常完成后，尝试后仍然无法访问，请尝试命令修复lsp。以管理员身份运行：netsh winsock reset")
 
 	InitSignal()
 }
@@ -136,7 +137,7 @@ func check(info *url2.SelfUrl) error {
 	logging.Printf("host：%s, allIp：%v \n", info.Host, allIpList)
 
 	for i := range allIpList {
-		if ok := fixBind(hosts, allIpList[i], info); ok {
+		if ok := fixBind(hosts, allIpList[i], info); !ok {
 			return errors.New("无法修复联系管理员")
 		}
 	}
@@ -196,7 +197,6 @@ func printStart(title string) {
 func printEnd(title string) {
 	logging.Printf("\n %s END %s %s \n", strings.Repeat("+", 20), title, strings.Repeat("+", 20))
 }
-
 
 // InitSignal register signals handler.
 func InitSignal() {
