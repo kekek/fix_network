@@ -24,3 +24,7 @@ func Printf(format string, v ...interface{}) {
 func Println(v ...interface{})  {
 	DefaultLog.Println(v...)
 }
+
+func Print(v ...interface{})  {
+	DefaultLog.Print(v...)
+}
