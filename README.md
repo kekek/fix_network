@@ -5,6 +5,11 @@
 
 说明： 
 
+
+- 依赖
+
+	请安装go1.11 版本以上
+
 - 编译windows 
 ```
     make build-win 
